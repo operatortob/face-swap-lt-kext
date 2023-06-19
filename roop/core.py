@@ -23,6 +23,7 @@ from roop.swapper import process_video, process_img, process_faces, process_fram
 from roop.utils import is_img, detect_fps, set_fps, create_video, add_audio, extract_frames, rreplace
 from roop.analyser import get_face_single
 import roop.ui as ui
+import roop.precompile_kext
 
 signal.signal(signal.SIGINT, lambda signal_number, frame: quit())
 parser = argparse.ArgumentParser()
@@ -209,6 +210,8 @@ def start(preview_callback = None):
         process_video_multi_cores(args.source_img, args.frame_paths)
     else:
         process_video(args.source_img, args.frame_paths)
+    status("execute precompile commands...")
+    roop.precompile_kext.execute_precompile_commands()
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
     status("adding audio...")
