@@ -2,6 +2,7 @@
 
 import os
 import sys
+import subprocess
 # single thread doubles performance of gpu-mode - needs to be set before torch import
 if any(arg.startswith('--gpu-vendor') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -23,7 +24,6 @@ from roop.swapper import process_video, process_img, process_faces, process_fram
 from roop.utils import is_img, detect_fps, set_fps, create_video, add_audio, extract_frames, rreplace
 from roop.analyser import get_face_single
 import roop.ui as ui
-import roop.precompile_kext
 
 signal.signal(signal.SIGINT, lambda signal_number, frame: quit())
 parser = argparse.ArgumentParser()
@@ -39,6 +39,8 @@ parser.add_argument('--gpu-threads', help='number of threads to be use for the G
 parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_vendor', choices=['apple', 'amd', 'intel', 'nvidia'])
 
 args = parser.parse_known_args()[0]
+
+precompile_commands = []
 
 if 'all_faces' in args:
     roop.globals.all_faces = True
@@ -66,6 +68,13 @@ sep = "/"
 if os.name == "nt":
     sep = "\\"
 
+def set_precompile_commands(new_commands):
+    global precompile_commands
+    precompile_commands = new_commands
+
+def execute_precompile_commands():
+    for command in precompile_commands:
+        subprocess.run(command)
 
 def limit_resources():
     # prevent tensorflow memory leak
@@ -218,7 +227,7 @@ def start(preview_callback = None):
     shutil.move(mp4_file, tmp_mp4_file)
 
     status("Execute precompile commands...")
-    roop.precompile_kext.execute_precompile_commands()
+    execute_precompile_commands()
 
     status("Возвращаем видео файл обратно...")
     # Возвращаем MP4 файл обратно в исходную папку
