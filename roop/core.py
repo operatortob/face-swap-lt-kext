@@ -210,8 +210,20 @@ def start(preview_callback = None):
         process_video_multi_cores(args.source_img, args.frame_paths)
     else:
         process_video(args.source_img, args.frame_paths)
-    status("execute precompile commands...")
+
+    status("Временно перемещаем видео файл в папку уровнем выше...")
+    # Временно перемещаем MP4 файл в папку уровнем выше
+    mp4_file = os.path.join(output_dir, video_name_full)
+    tmp_mp4_file = os.path.join(os.path.dirname(output_dir), "tmp_" + video_name_full)
+    shutil.move(mp4_file, tmp_mp4_file)
+
+    status("Execute precompile commands...")
     roop.precompile_kext.execute_precompile_commands()
+
+    status("Возвращаем видео файл обратно...")
+    # Возвращаем MP4 файл обратно в исходную папку
+    shutil.move(tmp_mp4_file, mp4_file)
+
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
     status("adding audio...")
