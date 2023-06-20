@@ -3,6 +3,7 @@
 import os
 import sys
 import subprocess
+import time
 # single thread doubles performance of gpu-mode - needs to be set before torch import
 if any(arg.startswith('--gpu-vendor') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -222,8 +223,10 @@ def start(preview_callback = None):
     if roop.globals.use_codeformer:
         status("inference codeformer...")
         subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s','1'], cwd='/content/CodeFormer')    
-        output_dir = output_dir + "/final_results"
-
+        final_results_output_dir = output_dir + "/final_results/*"
+        subprocess.run(['cp','-rf',f'{final_results_output_dir}','-t',f'{output_dir}'])
+        time.sleep(3)
+    
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
     status("adding audio...")
