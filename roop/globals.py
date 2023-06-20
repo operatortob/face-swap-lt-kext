@@ -6,6 +6,8 @@ cpu_cores = None
 gpu_threads = None
 gpu_vendor = None
 providers = onnxruntime.get_available_providers()
+use_codeformer = None
+codeformer_fidelity = None
 
 if 'TensorrtExecutionProvider' in providers:
     providers.remove('TensorrtExecutionProvider')

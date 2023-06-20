@@ -2,6 +2,7 @@
 
 import os
 import sys
+import subprocess
 # single thread doubles performance of gpu-mode - needs to be set before torch import
 if any(arg.startswith('--gpu-vendor') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -36,12 +37,20 @@ parser.add_argument('--max-memory', help='maximum amount of RAM in GB to be used
 parser.add_argument('--cpu-cores', help='number of CPU cores to use', dest='cpu_cores', type=int, default=max(psutil.cpu_count() / 2, 1))
 parser.add_argument('--gpu-threads', help='number of threads to be use for the GPU', dest='gpu_threads', type=int, default=8)
 parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_vendor', choices=['apple', 'amd', 'intel', 'nvidia'])
+parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
+parser.add_argument('--codeformer-fidelity', help='Balance the quality (lower number) and fidelity (higher number)', dest='codeformer_fidelity', type=float, default=0.7)
 
 args = parser.parse_known_args()[0]
 
 if 'all_faces' in args:
     roop.globals.all_faces = True
 
+if 'use_codeformer' in args:
+    roop.globals.use_codeformer = True
+
+if 'codeformer_fidelity' in args:
+    roop.globals.codeformer_fidelity = args.codeformer_fidelity
+    
 if args.cpu_cores:
     roop.globals.cpu_cores = int(args.cpu_cores)
 
@@ -209,6 +218,12 @@ def start(preview_callback = None):
         process_video_multi_cores(args.source_img, args.frame_paths)
     else:
         process_video(args.source_img, args.frame_paths)
+
+    if roop.globals.use_codeformer:
+        status("inference codeformer...")
+        subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s','1'], cwd='/content/CodeFormer')    
+        output_dir = output_dir + "/final_results"
+
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
     status("adding audio...")
