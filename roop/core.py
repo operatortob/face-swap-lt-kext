@@ -40,6 +40,7 @@ parser.add_argument('--gpu-threads', help='number of threads to be use for the G
 parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_vendor', choices=['apple', 'amd', 'intel', 'nvidia'])
 parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
 parser.add_argument('--codeformer-fidelity', help='Balance the quality (lower number) and fidelity (higher number)', dest='codeformer_fidelity', type=float, default=0.7)
+parser.add_argument('--codeformer-realesrgan-upscale', help='Upscale', dest='codeformer_realesrgan_upscale', type=float, default=1)
 
 args = parser.parse_known_args()[0]
 
@@ -51,6 +52,9 @@ if 'use_codeformer' in args:
 
 if 'codeformer_fidelity' in args:
     roop.globals.codeformer_fidelity = args.codeformer_fidelity
+
+if 'codeformer_realesrgan_upscale' in args:
+    roop.globals.codeformer_realesrgan_upscale = args.codeformer_realesrgan_upscale
     
 if args.cpu_cores:
     roop.globals.cpu_cores = int(args.cpu_cores)
@@ -222,7 +226,7 @@ def start(preview_callback = None):
 
     if roop.globals.use_codeformer:
         status("inference codeformer...")
-        subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s','1'], cwd='/content/CodeFormer')    
+        subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
         final_results_output_dir = output_dir + "/final_results/*"
         subprocess.run(['cp','-rf',f'{final_results_output_dir}','-t',f'{output_dir}'])
         time.sleep(3)
