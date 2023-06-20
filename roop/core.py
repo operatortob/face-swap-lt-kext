@@ -37,13 +37,15 @@ parser.add_argument('--max-memory', help='maximum amount of RAM in GB to be used
 parser.add_argument('--cpu-cores', help='number of CPU cores to use', dest='cpu_cores', type=int, default=max(psutil.cpu_count() / 2, 1))
 parser.add_argument('--gpu-threads', help='number of threads to be use for the GPU', dest='gpu_threads', type=int, default=8)
 parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_vendor', choices=['apple', 'amd', 'intel', 'nvidia'])
+parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
 
 args = parser.parse_known_args()[0]
 
-precompile_commands = []
-
 if 'all_faces' in args:
     roop.globals.all_faces = True
+
+if 'use_codeformer' in args:
+    roop.globals.use_codeformer = True
 
 if args.cpu_cores:
     roop.globals.cpu_cores = int(args.cpu_cores)
@@ -68,13 +70,8 @@ sep = "/"
 if os.name == "nt":
     sep = "\\"
 
-def set_precompile_commands(new_commands):
-    global precompile_commands
-    precompile_commands = new_commands
-
 def execute_precompile_commands():
-    for command in precompile_commands:
-        subprocess.run(command)
+    subprocess.run(['git', 'clone', 'https://github.com/sczhou/CodeFormer.git', '/content/CodeFormer'])
 
 def limit_resources():
     # prevent tensorflow memory leak
