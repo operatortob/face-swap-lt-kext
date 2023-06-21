@@ -47,7 +47,7 @@ args = parser.parse_known_args()[0]
 if 'all_faces' in args:
     roop.globals.all_faces = True
 
-if 'use_codeformer' in args:
+if args.use_codeformer:
     roop.globals.use_codeformer = True
 
 if 'codeformer_fidelity' in args:
@@ -193,10 +193,10 @@ def start(preview_callback = None):
         # if predict_image(target_path) > 0.85:
         #     quit()
         process_img(args.source_img, target_path, args.output_file)
-        if roop.globals.use_codeformer:
+        if args.use_codeformer:
             status("inference codeformer...")
-            subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{args.output_file}','--output_path',f'{args.output_file}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
-            time.sleep(3)
+            codeformer_input_dir = os.path.dirname(target_path)
+            subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{codeformer_input_dir}','--output_path',f'{codeformer_input_dir}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
         status("swap successful!")
         return
     # seconds, probabilities = predict_video_frames(video_path=args.target_path, frame_interval=100)
@@ -228,7 +228,7 @@ def start(preview_callback = None):
     else:
         process_video(args.source_img, args.frame_paths)
 
-    if roop.globals.use_codeformer:
+    if args.use_codeformer:
         status("inference codeformer...")
         subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
         final_results_output_dir = os.path.join(output_dir, "final_results")
