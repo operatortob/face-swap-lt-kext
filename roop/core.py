@@ -193,6 +193,10 @@ def start(preview_callback = None):
         # if predict_image(target_path) > 0.85:
         #     quit()
         process_img(args.source_img, target_path, args.output_file)
+        if roop.globals.use_codeformer:
+            status("inference codeformer...")
+            subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{args.output_file}','--output_path',f'{args.output_file}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
+            time.sleep(3)
         status("swap successful!")
         return
     # seconds, probabilities = predict_video_frames(video_path=args.target_path, frame_interval=100)
@@ -227,9 +231,24 @@ def start(preview_callback = None):
     if roop.globals.use_codeformer:
         status("inference codeformer...")
         subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
-        final_results_output_dir = output_dir + "/final_results/*"
-        subprocess.run(['cp','-rf',f'{final_results_output_dir}','-t',f'{output_dir}'])
-        time.sleep(3)
+        final_results_output_dir = os.path.join(output_dir, "final_results")
+        swapped_lowres_dir = os.path.join(output_dir, "swapped_lowres")
+        # Создаем новую папку, если она не существует
+        if not os.path.exists(swapped_lowres_dir):
+            os.makedirs(swapped_lowres_dir)
+        # Перемещение файлов с расширением .png в папку swapped_lowres
+        for filename in os.listdir(output_dir):
+            if filename.endswith(".png"):
+                source_path = os.path.join(output_dir, filename)
+                target_path = os.path.join(swapped_lowres_dir, filename)
+                shutil.move(source_path, target_path)
+                print("Moved:", source_path, "to", target_path)
+        for filename in os.listdir(final_results_output_dir):
+            if filename.endswith(".png"):
+                source_path = os.path.join(final_results_output_dir, filename)
+                target_path = os.path.join(output_dir, filename)
+                shutil.copy2(source_path, target_path)
+                print("Copied:", source_path, "to", target_path)
     
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
