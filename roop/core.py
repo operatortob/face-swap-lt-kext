@@ -242,13 +242,11 @@ def start(preview_callback = None):
                 source_path = os.path.join(output_dir, filename)
                 target_path = os.path.join(swapped_lowres_dir, filename)
                 shutil.move(source_path, target_path)
-                print("Moved:", source_path, "to", target_path)
         for filename in os.listdir(final_results_output_dir):
             if filename.endswith(".png"):
                 source_path = os.path.join(final_results_output_dir, filename)
                 target_path = os.path.join(output_dir, filename)
                 shutil.copy2(source_path, target_path)
-                print("Copied:", source_path, "to", target_path)
     
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
