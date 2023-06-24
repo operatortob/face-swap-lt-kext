@@ -41,8 +41,8 @@ parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_ven
 parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
 parser.add_argument('--codeformer-fidelity', help='Balance the quality (lower number) and fidelity (higher number)', dest='codeformer_fidelity', type=float, default=0.7)
 parser.add_argument('--codeformer-realesrgan-upscale', help='Upscale', dest='codeformer_realesrgan_upscale', type=float, default=1)
-parser.add_argument('--frame-skip', help='frame-skip', dest='frame_skip', type=int, default=0)
-parser.add_argument('--times_to_interpolate', help='times_to_interpolate', dest='times_to_interpolate', type=int, default=6)
+parser.add_argument('--frame-skip', help='frame-skip', dest='frame_skip', type=int, default=4)
+parser.add_argument('--times_to_interpolate', help='times_to_interpolate', dest='times_to_interpolate', type=int, default=2)
 
 
 args = parser.parse_known_args()[0]
@@ -59,11 +59,11 @@ if 'codeformer_fidelity' in args:
 if 'codeformer_realesrgan_upscale' in args:
     roop.globals.codeformer_realesrgan_upscale = args.codeformer_realesrgan_upscale
 
-if 'frame_skip' in args:
-    roop.globals.frame_skip = args.frame_skip
+if args.frame_skip in args:
+    roop.globals.frame_skip = int(args.frame_skip)
 
-if 'times_to_interpolate' in args:
-    roop.globals.times_to_interpolate = args.times_to_interpolate
+if args.times_to_interpolate in args:
+    roop.globals.times_to_interpolate = int(args.times_to_interpolate)
     
 if args.cpu_cores:
     roop.globals.cpu_cores = int(args.cpu_cores)
@@ -262,21 +262,14 @@ def start(preview_callback = None):
             os.makedirs(interpolated_frames_output_dir)
 
         status("frame interpolation...")
-        subprocess.run(['python', '/content/frame-interpolation/eval/interpolator_cli.py','--pattern',f'{final_results_output_dir}','--model_path','/content/frame-interpolation/pretrained_models/film_net/Style/saved_model','--times_to_interpolate',f'{args.times_to_interpolate}'], cwd='/content/frame-interpolation')    
-        for idx, filename in enumerate(os.listdir(final_results_output_dir)):
-            frame_path = os.path.join(final_results_output_dir, filename)
-            new_filename = f'{idx+1:04d}.png'
-            new_frame_path = os.path.join(final_results_output_dir, new_filename)
-            os.rename(frame_path, new_frame_path)
-            source_path = os.path.join(interpolated_frames_output_dir, filename)
-            target_path = os.path.join(output_dir, filename)
-            shutil.copy2(source_path, target_path)
+        subprocess.run(['python','-m','eval.interpolator_cli','--pattern',f'{final_results_output_dir}','--model_path','/content/frame-interpolation/pretrained_models/film_net/Style/saved_model','--times_to_interpolate',f'{args.times_to_interpolate}'], cwd='/content/frame-interpolation')    
         
-        # for filename in os.listdir(interpolated_frames_output_dir):
-        #     if filename.endswith(".png"):
-        #         source_path = os.path.join(interpolated_frames_output_dir, filename)
-        #         target_path = os.path.join(output_dir, filename)
-        #         shutil.copy2(source_path, target_path)
+       
+        for filename in os.listdir(interpolated_frames_output_dir):
+            if filename.endswith(".png"):
+                source_path = os.path.join(interpolated_frames_output_dir, filename)
+                target_path = os.path.join(output_dir, filename)
+                shutil.copy2(source_path, target_path)
         
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
