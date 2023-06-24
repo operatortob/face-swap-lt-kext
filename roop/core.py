@@ -41,6 +41,9 @@ parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_ven
 parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
 parser.add_argument('--codeformer-fidelity', help='Balance the quality (lower number) and fidelity (higher number)', dest='codeformer_fidelity', type=float, default=0.7)
 parser.add_argument('--codeformer-realesrgan-upscale', help='Upscale', dest='codeformer_realesrgan_upscale', type=float, default=1)
+parser.add_argument('--frame-skip', help='frame-skip', dest='frame_skip', type=int, default=0)
+parser.add_argument('--times_to_interpolate', help='times_to_interpolate', dest='times_to_interpolate', type=int, default=6)
+
 
 args = parser.parse_known_args()[0]
 
@@ -55,6 +58,12 @@ if 'codeformer_fidelity' in args:
 
 if 'codeformer_realesrgan_upscale' in args:
     roop.globals.codeformer_realesrgan_upscale = args.codeformer_realesrgan_upscale
+
+if 'frame_skip' in args:
+    roop.globals.frame_skip = args.frame_skip
+
+if 'times_to_interpolate' in args:
+    roop.globals.times_to_interpolate = args.times_to_interpolate
     
 if args.cpu_cores:
     roop.globals.cpu_cores = int(args.cpu_cores)
@@ -215,7 +224,7 @@ def start(preview_callback = None):
     else:
         shutil.copy(target_path, output_dir)
     status("extracting frames...")
-    extract_frames(target_path, output_dir)
+    extract_frames(target_path, output_dir, args.frame_skip)
     args.frame_paths = tuple(sorted(
         glob.glob(output_dir + "/*.png"),
         key=lambda x: int(x.split(sep)[-1].replace(".png", ""))
@@ -227,10 +236,15 @@ def start(preview_callback = None):
         process_video_multi_cores(args.source_img, args.frame_paths)
     else:
         process_video(args.source_img, args.frame_paths)
-
+    
     if args.use_codeformer:
+        status("creating lowres video...")
+        create_video(video_name, exact_fps, output_dir)
         status("inference codeformer...")
         subprocess.run(['python', '/content/CodeFormer/inference_codeformer.py','-w',f'{roop.globals.codeformer_fidelity}','--input_path',f'{output_dir}','--output_path',f'{output_dir}','--bg_upsampler','realesrgan','--face_upsample','-s',f'{roop.globals.codeformer_realesrgan_upscale}'], cwd='/content/CodeFormer')    
+        
+        
+        
         final_results_output_dir = os.path.join(output_dir, "final_results")
         swapped_lowres_dir = os.path.join(output_dir, "swapped_lowres")
         # Создаем новую папку, если она не существует
@@ -242,12 +256,28 @@ def start(preview_callback = None):
                 source_path = os.path.join(output_dir, filename)
                 target_path = os.path.join(swapped_lowres_dir, filename)
                 shutil.move(source_path, target_path)
-        for filename in os.listdir(final_results_output_dir):
-            if filename.endswith(".png"):
-                source_path = os.path.join(final_results_output_dir, filename)
-                target_path = os.path.join(output_dir, filename)
-                shutil.copy2(source_path, target_path)
-    
+
+        interpolated_frames_output_dir = os.path.join(final_results_output_dir, "interpolated_frames")
+        if not os.path.exists(interpolated_frames_output_dir):
+            os.makedirs(interpolated_frames_output_dir)
+
+        status("frame interpolation...")
+        subprocess.run(['python', '/content/frame-interpolation/eval/interpolator_cli.py','--pattern',f'{final_results_output_dir}','--model_path','/content/frame-interpolation/pretrained_models/film_net/Style/saved_model','--times_to_interpolate',f'{args.times_to_interpolate}'], cwd='/content/frame-interpolation')    
+        for idx, filename in enumerate(os.listdir(final_results_output_dir)):
+            frame_path = os.path.join(final_results_output_dir, filename)
+            new_filename = f'{idx+1:04d}.png'
+            new_frame_path = os.path.join(final_results_output_dir, new_filename)
+            os.rename(frame_path, new_frame_path)
+            source_path = os.path.join(interpolated_frames_output_dir, filename)
+            target_path = os.path.join(output_dir, filename)
+            shutil.copy2(source_path, target_path)
+        
+        # for filename in os.listdir(interpolated_frames_output_dir):
+        #     if filename.endswith(".png"):
+        #         source_path = os.path.join(interpolated_frames_output_dir, filename)
+        #         target_path = os.path.join(output_dir, filename)
+        #         shutil.copy2(source_path, target_path)
+        
     status("creating video...")
     create_video(video_name, exact_fps, output_dir)
     status("adding audio...")
