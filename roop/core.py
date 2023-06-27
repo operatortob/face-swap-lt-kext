@@ -41,7 +41,7 @@ parser.add_argument('--gpu-vendor', help='choice your GPU vendor', dest='gpu_ven
 parser.add_argument('--codeformer', help='use codeformer', dest='use_codeformer', action='store_true', default=False)
 parser.add_argument('--codeformer-fidelity', help='Balance the quality (lower number) and fidelity (higher number)', dest='codeformer_fidelity', type=float, default=0.7)
 parser.add_argument('--codeformer-realesrgan-upscale', help='Upscale', dest='codeformer_realesrgan_upscale', type=float, default=1)
-parser.add_argument('--frame-skip', help='frame-skip', dest='frame_skip', type=int, default=4)
+parser.add_argument('--frame-skip', help='frame-skip', dest='frame_skip', type=int, default=0)
 parser.add_argument('--times_to_interpolate', help='times_to_interpolate', dest='times_to_interpolate', type=int, default=2)
 
 
