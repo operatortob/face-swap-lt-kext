@@ -4,6 +4,7 @@ import os
 import sys
 import subprocess
 import time
+
 # single thread doubles performance of gpu-mode - needs to be set before torch import
 if any(arg.startswith('--gpu-vendor') for arg in sys.argv):
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -22,7 +23,7 @@ import cv2
 
 import roop.globals
 from roop.swapper import process_video, process_img, process_faces, process_frames
-from roop.utils import is_img, detect_fps, set_fps, create_video, add_audio, extract_frames, rreplace
+from roop.utils import is_img, detect_fps, set_fps, create_video, add_audio, extract_frames, extract_frames_skip, rreplace
 from roop.analyser import get_face_single
 import roop.ui as ui
 
@@ -224,7 +225,10 @@ def start(preview_callback = None):
     else:
         shutil.copy(target_path, output_dir)
     status("extracting frames...")
-    extract_frames(target_path, output_dir, args.frame_skip)
+    if args.frame_skip:
+        extract_frames_skip(target_path, output_dir, args.frame_skip)
+    else:
+        extract_frames(target_path, output_dir)
     args.frame_paths = tuple(sorted(
         glob.glob(output_dir + "/*.png"),
         key=lambda x: int(x.split(sep)[-1].replace(".png", ""))

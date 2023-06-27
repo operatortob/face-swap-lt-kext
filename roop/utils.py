@@ -46,16 +46,16 @@ def create_video(video_name, fps, output_dir):
     run_ffmpeg(f'{hwaccel_option} -framerate "{fps}" -i "{output_dir}{sep}%04d.png" -c:v libx264 -crf 7 -pix_fmt yuv420p -y "{output_dir}{sep}output.mp4"')
 
 
-def extract_frames(input_path, output_dir, frame_skip):
+def extract_frames_skip(input_path, output_dir, frame_skip):
     hwaccel_option = '-hwaccel cuda' if roop.globals.gpu_vendor == 'nvidia' else ''
     input_path, output_dir = path(input_path), path(output_dir)
     run_ffmpeg(f' {hwaccel_option} -i "{input_path}" -vf "select=not(mod(n\,{frame_skip}))" -vsync vfr "{output_dir}{sep}%04d.png"')
 
 
-# def extract_frames(input_path, output_dir):
-#     hwaccel_option = '-hwaccel cuda' if roop.globals.gpu_vendor == 'nvidia' else ''
-#     input_path, output_dir = path(input_path), path(output_dir)
-#     run_ffmpeg(f' {hwaccel_option} -i "{input_path}" "{output_dir}{sep}%04d.png"')
+def extract_frames(input_path, output_dir):
+    hwaccel_option = '-hwaccel cuda' if roop.globals.gpu_vendor == 'nvidia' else ''
+    input_path, output_dir = path(input_path), path(output_dir)
+    run_ffmpeg(f' {hwaccel_option} -i "{input_path}" "{output_dir}{sep}%04d.png"')
 
 
 def add_audio(output_dir, target_path, video, keep_frames, output_file):
