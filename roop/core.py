@@ -241,7 +241,7 @@ def start(preview_callback = None):
     else:
         process_video(args.source_img, args.frame_paths)
     
-    if args.use_codeformer:
+    if args.use_codeformer and not is_img(target_path):
         status("creating lowres video...")
         create_video(video_name, exact_fps, output_dir)
         status("inference codeformer...")
